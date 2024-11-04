@@ -1,1 +1,1 @@
-
+A matéria de algoritmos e estruturas de dados é a responsável pelo desenvolvimento das lógicas de programação em variadas linguagens, assim como o funcionamento desses códigos no computador, como o desenvolvimento básico de noções de memória.
