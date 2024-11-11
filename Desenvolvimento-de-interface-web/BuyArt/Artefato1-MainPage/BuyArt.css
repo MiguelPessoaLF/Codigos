@@ -1,0 +1,205 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.all
+{
+    display: none;
+}
+body.loading
+{
+    background-color: whitesmoke;
+}
+#animacao-inicial
+{
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+#animacao-inicial img
+{
+    width: 500px;
+}
+.fade-out
+{
+    animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut
+{
+    from 
+    {
+        pacity: 1;
+    }
+    to 
+    {
+        opacity: 0;
+    }
+}
+.BuyArt
+{
+    font-family: Courier, monospace;
+    font-size: 600%;
+    text-align: center;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+.header
+{
+    position: relative;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+}
+.fix-esquerda
+{
+    top: 15px;
+    left: 15px;
+    max-width: 100%;
+    position: fixed;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.fix-direita
+{
+    display: flex;
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+input[type="checkbox"] 
+{
+    display: none;
+}
+.fix-direitas
+{
+    display: flex;
+    position: fixed;
+    top: 15px;
+    right: 80px;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.fix-esquerdac
+{
+    bottom: 15px;
+    left: 15px;
+    max-width: 100%;
+    position: fixed;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.body
+{
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.container
+{
+    display: grid;
+    gap: 0px;
+}
+.post
+{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    padding-top: 200px;
+}
+.imagem
+{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    justify-content: center;
+    grid-column: 2/3;
+    align-items: center;
+}
+.interações
+{
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: center;
+    grid-column: 3;
+    align-items: center;
+}
+.imagens img
+{
+    cursor: pointer;
+    border: none;
+    padding: 0px 0px;
+    margin-bottom: 0px;
+}
+.like
+{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.artista
+{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.comentario
+{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}.descrição
+{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.pagamento
+{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+.arte
+{
+    font-size: 200%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+    text-justify: left;
+}
+.pe
+{
+    font-size: 100%;
+    border: 3px solid white;
+    height: 100%;
+    text-align: center;
+    background-color: rgb(185, 185, 185);
+}
