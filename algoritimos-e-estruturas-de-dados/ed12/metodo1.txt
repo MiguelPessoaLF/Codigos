@@ -1,0 +1,3 @@
+quantidade de valores: 4
+   2   8
+   5   1
