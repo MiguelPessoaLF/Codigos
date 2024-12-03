@@ -1,2 +1,0 @@
-fala theldo, 
-algumas atividades pediam funcoes de erro privadas a classe, mas essas funcoes de erro eu fiz em outra biblioteca como voce fez nos exemplos, entao nao tinha como eu deixar privado, de qualquer forma nao seria muito dificil, daria mais o menos na mesma.
