@@ -1,5 +1,0 @@
-numero do quarto: 4
-quarto para: 
-2
-valor da diaria: 
-100

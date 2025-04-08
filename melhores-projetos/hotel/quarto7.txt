@@ -1,5 +1,0 @@
-numero do quarto: 7
-quarto para: 
-3
-valor da diaria: 
-120

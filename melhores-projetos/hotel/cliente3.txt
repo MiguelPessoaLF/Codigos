@@ -1,4 +1,0 @@
-nome do cliente: Neymar jr.
-codigo do cliente: 3
-endereco do cliente: rua nj 123
-telefone do cliente: (11)9112-3422
