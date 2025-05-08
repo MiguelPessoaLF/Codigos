@@ -1,1 +1,1 @@
-
+Código completo das versões em C e Java do segundo trabalho prático, é importante baixar todos os arquivos para que o código funcione normalmente, usar a entrada pub.in e, no caso de Java, modificar a linha de abertura do arquivo, retirando /tmp/, se necessário.
