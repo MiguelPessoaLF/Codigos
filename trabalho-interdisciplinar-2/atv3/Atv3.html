@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cadastro de Produtos (WS04 estilo)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin: 20px; line-height:1.4; }
+    h1 { margin-bottom: 6px; }
+    .container { max-width: 980px; margin: 0 auto; }
+    form { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; align-items: end; margin-bottom: 18px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background:#fafafa; }
+    label { display:block; font-size: 0.9rem; margin-bottom:4px; }
+    input[type="text"], input[type="number"], textarea, select { width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; }
+    textarea { resize: vertical; min-height:60px; }
+    .full { grid-column: 1 / -1; }
+    .actions { display:flex; gap:8px; }
+    button { padding:8px 12px; border-radius:6px; border: none; cursor:pointer; }
+    button.primary { background:#007bff; color:white; }
+    button.warn { background:#ffc107; color:#222; }
+    button.danger { background:#dc3545; color:white; }
+    table { width:100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding:8px; border:1px solid #eee; text-align:left; font-size:0.95rem; }
+    tr:hover { background:#f8f8f8; }
+    .small { font-size:0.85rem; color:#666; }
+    .notice { margin-bottom:12px; color:#444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cadastro de Produtos</h1>
+    <p class="notice small">Use o formulário para inserir, atualizar ou excluir produtos. O sistema tenta usar um backend REST; se não encontrar, salva localmente no navegador.</p>
+
+    <form id="produtoForm">
+      <!-- id (opcional) usado para update/delete -->
+      <div>
+        <label for="id">ID (deixe vazio para novo)</label>
+        <input type="text" id="id" name="id" placeholder="ex: 1001" />
+      </div>
+
+      <div>
+        <label for="nome">Nome</label>
+        <input type="text" id="nome" name="nome" required />
+      </div>
+
+      <div>
+        <label for="preco">Preço (R$)</label>
+        <input type="number" id="preco" name="preco" step="0.01" min="0" required />
+      </div>
+
+      <div>
+        <label for="quantidade">Quantidade</label>
+        <input type="number" id="quantidade" name="quantidade" min="0" required />
+      </div>
+
+      <div>
+        <label for="categoria">Categoria</label>
+        <select id="categoria" name="categoria">
+          <option value="">— selecione —</option>
+          <option>Eletrônicos</option>
+          <option>Vestuário</option>
+          <option>Alimentos</option>
+          <option>Casa</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="disponivel">Disponível</label>
+        <select id="disponivel" name="disponivel">
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao"></textarea>
+      </div>
+
+      <div class="full actions">
+        <button type="submit" id="btnSalvar" class="primary">Salvar (POST)</button>
+        <button type="button" id="btnAtualizar" class="warn">Atualizar (PUT)</button>
+        <button type="button" id="btnExcluir" class="danger">Excluir (DELETE)</button>
+        <button type="button" id="btnLimpar">Limpar</button>
+        <button type="button" id="btnListar">Listar Produtos (GET)</button>
+      </div>
+    </form>
+
+    <div id="mensagens" class="small"></div>
+
+    <table id="tabelaProdutos" aria-live="polite">
+      <thead>
+        <tr>
+          <th>ID</th><th>Nome</th><th>Preço</th><th>Qtd</th><th>Categoria</th><th>Disponível</th><th>Descrição</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    (function(){
+      // Ajuste este base para o seu backend real. Ex.: 'http://localhost:8080/api'
+      const API_BASE = '/api'; // padrão sugerido: /api/produtos
+      const RESOURCE = 'produtos';
+      const useBackend = true; // mantém tentativas de usar backend (se falhar, usa localStorage)
+
+      const form = document.getElementById('produtoForm');
+      const msgs = document.getElementById('mensagens');
+      const tbody = document.querySelector('#tabelaProdutos tbody');
+
+      // ---------------- utilidades ----------------
+      function showMsg(text, tempo=3500) {
+        msgs.textContent = text;
+        if (tempo > 0) setTimeout(()=> { if (msgs.textContent === text) msgs.textContent = ''; }, tempo);
+      }
+
+      function formToProduto() {
+        const id = document.getElementById('id').value.trim();
+        return {
+          id: id === '' ? null : id,
+          nome: document.getElementById('nome').value.trim(),
+          preco: parseFloat(document.getElementById('preco').value),
+          quantidade: parseInt(document.getElementById('quantidade').value, 10),
+          categoria: document.getElementById('categoria').value,
+          disponivel: document.getElementById('disponivel').value === 'true',
+          descricao: document.getElementById('descricao').value.trim()
+        };
+      }
+
+      function produtoToForm(p) {
+        document.getElementById('id').value = p.id ?? '';
+        document.getElementById('nome').value = p.nome ?? '';
+        document.getElementById('preco').value = (p.preco != null) ? p.preco : '';
+        document.getElementById('quantidade').value = (p.quantidade != null) ? p.quantidade : '';
+        document.getElementById('categoria').value = p.categoria ?? '';
+        document.getElementById('disponivel').value = (p.disponivel ? 'true' : 'false');
+        document.getElementById('descricao').value = p.descricao ?? '';
+      }
+
+      function limparForm() {
+        form.reset();
+        document.getElementById('id').value = '';
+      }
+
+      // ---------------- localStorage fallback ----------------
+      const LS_KEY = 'ws04_produtos_local';
+
+      function lsGetAll() {
+        const raw = localStorage.getItem(LS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      }
+      function lsSaveAll(arr) {
+        localStorage.setItem(LS_KEY, JSON.stringify(arr));
+      }
+      function lsNewProduto(p) {
+        const all = lsGetAll();
+        // atribui id se faltar
+        if (!p.id) {
+          const next = (all.length === 0) ? 1 : (Math.max(...all.map(x => Number(x.id))) + 1);
+          p.id = String(next);
+        }
+        all.push(p);
+        lsSaveAll(all);
+        return p;
+      }
+      function lsUpdateProduto(p) {
+        let all = lsGetAll();
+        const idx = all.findIndex(x => String(x.id) === String(p.id));
+        if (idx === -1) throw new Error('Produto não encontrado (local).');
+        all[idx] = p;
+        lsSaveAll(all);
+        return p;
+      }
+      function lsDeleteProduto(id) {
+        let all = lsGetAll();
+        const idx = all.findIndex(x => String(x.id) === String(id));
+        if (idx === -1) throw new Error('Produto não encontrado (local).');
+        all.splice(idx,1);
+        lsSaveAll(all);
+      }
+
+      // ---------------- chamadas REST (com fallback) ----------------
+      async function api(url, opts = {}) {
+        try {
+          const res = await fetch(url, opts);
+          if (!res.ok) {
+            // tente parsear mensagem do backend
+            let text = await res.text();
+            throw new Error('Erro servidor: ' + res.status + ' ' + res.statusText + (text ? ' — ' + text : ''));
+          }
+          // se houver corpo JSON
+          const ct = res.headers.get('content-type') || '';
+          if (ct.includes('application/json')) return await res.json();
+          return null;
+        } catch (err) {
+          // se for falha de rede e useBackend=true, re-throw para fallback usar localStorage
+          throw err;
+        }
+      }
+
+      async function listarProdutos() {
+        // tenta backend: GET /api/produtos
+        try {
+          if (useBackend) {
+            const data = await api(`${API_BASE}/${RESOURCE}`);
+            // espera array
+            renderProdutos(Array.isArray(data) ? data : []);
+            showMsg('Dados carregados do backend.');
+            return;
+          }
+          throw new Error('Backend desativado');
+        } catch (err) {
+          // fallback
+          renderProdutos(lsGetAll());
+          showMsg('Backend indisponível — usando dados locais (localStorage).');
+        }
+      }
+
+      async function inserirProduto(p) {
+        try {
+          if (useBackend) {
+            const created = await api(`${API_BASE}/${RESOURCE}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(p)
+            });
+            showMsg('Produto cadastrado (backend).');
+            return created;
+          }
+          throw new Error('Backend desativado');
+        } catch (err) {
+          const created = lsNewProduto(p);
+          showMsg('Produto cadastrado (local).');
+          return created;
+        }
+      }
+
+      async function atualizarProduto(p) {
+        try {
+          if (useBackend) {
+            const updated = await api(`${API_BASE}/${RESOURCE}/${encodeURIComponent(p.id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(p)
+            });
+            showMsg('Produto atualizado (backend).');
+            return updated;
+          }
+          throw new Error('Backend desativado');
+        } catch (err) {
+          const updated = lsUpdateProduto(p);
+          showMsg('Produto atualizado (local).');
+          return updated;
+        }
+      }
+
+      async function excluirProduto(id) {
+        try {
+          if (useBackend) {
+            await api(`${API_BASE}/${RESOURCE}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            showMsg('Produto excluído (backend).');
+            return;
+          }
+          throw new Error('Backend desativado');
+        } catch (err) {
+          lsDeleteProduto(id);
+          showMsg('Produto excluído (local).');
+        }
+      }
+
+      // ---------------- render ----------------
+      function renderProdutos(list) {
+        tbody.innerHTML = '';
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum produto encontrado.</td></tr>';
+          return;
+        }
+        for (const p of list) {
+          const tr = document.createElement('tr');
+
+          const idCell = document.createElement('td'); idCell.textContent = p.id ?? '';
+          const nomeCell = document.createElement('td'); nomeCell.textContent = p.nome ?? '';
+          const precoCell = document.createElement('td'); precoCell.textContent = (p.preco != null) ? Number(p.preco).toFixed(2) : '';
+          const qtdCell = document.createElement('td'); qtdCell.textContent = p.quantidade ?? '';
+          const catCell = document.createElement('td'); catCell.textContent = p.categoria ?? '';
+          const dispCell = document.createElement('td'); dispCell.textContent = p.disponivel ? 'Sim' : 'Não';
+          const descCell = document.createElement('td'); descCell.textContent = p.descricao ?? '';
+
+          const ações = document.createElement('td');
+          const btnCarregar = document.createElement('button'); btnCarregar.textContent = 'Carregar'; btnCarregar.style.marginRight = '6px';
+          btnCarregar.addEventListener('click', ()=> produtoToForm(p));
+
+          const btnDel = document.createElement('button'); btnDel.textContent = 'X'; btnDel.className = 'danger';
+          btnDel.addEventListener('click', async ()=> {
+            if (!confirm('Confirma exclusão do produto ID ' + p.id + '?')) return;
+            try {
+              await excluirProduto(p.id);
+              await listarProdutos();
+            } catch (e) { showMsg('Erro ao excluir: ' + e.message); }
+          });
+
+          ações.appendChild(btnCarregar);
+          ações.appendChild(btnDel);
+
+          tr.appendChild(idCell);
+          tr.appendChild(nomeCell);
+          tr.appendChild(precoCell);
+          tr.appendChild(qtdCell);
+          tr.appendChild(catCell);
+          tr.appendChild(dispCell);
+          tr.appendChild(descCell);
+          tr.appendChild(ações);
+
+          tbody.appendChild(tr);
+        }
+      }
+
+      // ---------------- eventos ----------------
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const p = formToProduto();
+        // validações mínimas
+        if (!p.nome) { showMsg('Nome é obrigatório'); return; }
+        if (isNaN(p.preco) || p.preco < 0) { showMsg('Preço inválido'); return; }
+        if (isNaN(p.quantidade) || p.quantidade < 0) { showMsg('Quantidade inválida'); return; }
+
+        try {
+          if (!p.id) {
+            await inserirProduto(p);
+            limparForm();
+            listarProdutos();
+          } else {
+            // se ID preenchido, pede confirmação para criação com ID explícito
+            if (!confirm('ID preenchido — deseja salvar como novo produto com ID informado? (Geralmente usa-se vazio para novo)')) return;
+            await inserirProduto(p);
+            limparForm();
+            listarProdutos();
+          }
+        } catch (err) {
+          showMsg('Erro ao salvar: ' + (err.message || err));
+        }
+      });
+
+      document.getElementById('btnAtualizar').addEventListener('click', async () => {
+        const p = formToProduto();
+        if (!p.id) { showMsg('Para atualizar informe o ID do produto.'); return; }
+        try {
+          await atualizarProduto(p);
+          limparForm();
+          listarProdutos();
+        } catch (err) {
+          showMsg('Erro ao atualizar: ' + err.message);
+        }
+      });
+
+      document.getElementById('btnExcluir').addEventListener('click', async () => {
+        const id = document.getElementById('id').value.trim();
+        if (!id) { showMsg('Informe o ID para exclusão.'); return; }
+        if (!confirm('Confirma exclusão do ID ' + id + '?')) return;
+        try {
+          await excluirProduto(id);
+          limparForm();
+          listarProdutos();
+        } catch (err) {
+          showMsg('Erro ao excluir: ' + err.message);
+        }
+      });
+
+      document.getElementById('btnLimpar').addEventListener('click', ()=> { limparForm(); showMsg('Formulário limpo.',1200); });
+      document.getElementById('btnListar').addEventListener('click', listarProdutos);
+
+      // carrega inicialmente
+      listarProdutos();
+
+      // para facilitar teste: preenche tabela com alguns itens de exemplo se localStorage vazio
+      (function seedLocalIfEmpty(){
+        if (!localStorage.getItem(LS_KEY)) {
+          const exemplo = [
+            { id: '1', nome: 'Cabo USB-C', preco: 29.90, quantidade: 50, categoria:'Eletrônicos', disponivel:true, descricao:'Cabo 1m' },
+            { id: '2', nome: 'Camiseta Básica', preco: 39.90, quantidade: 20, categoria:'Vestuário', disponivel:true, descricao:'Algodão' }
+          ];
+          localStorage.setItem(LS_KEY, JSON.stringify(exemplo));
+        }
+      })();
+
+    })();
+  </script>
+</body>
+</html>
